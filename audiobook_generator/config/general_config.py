@@ -48,6 +48,13 @@ class GeneralConfig:
         self.piper_noise_w_scale = getattr(args, 'piper_noise_w_scale', None)
         self.piper_length_scale = getattr(args, 'piper_length_scale', None)
         self.piper_sentence_silence = getattr(args, 'piper_sentence_silence', None)
+        
+        # TTS provider: XTTS specific arguments
+        self.xtts_model = getattr(args, 'xtts_model', None)
+        self.xtts_language = getattr(args, 'xtts_language', None)
+        self.xtts_voice_file = getattr(args, 'xtts_voice_file', None)
+        self.xtts_speaker = getattr(args, 'xtts_speaker', None)
+        self.xtts_speed = getattr(args, 'xtts_speed', None)
 
     def __str__(self):
         return ",\n".join(f"{key}={value}" for key, value in self.__dict__.items())

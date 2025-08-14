@@ -14,6 +14,8 @@ from audiobook_generator.tts_providers.openai_tts_provider import get_openai_sup
     get_openai_supported_voices, get_openai_instructions_example, get_openai_supported_output_formats
 from audiobook_generator.tts_providers.piper_tts_provider import get_piper_supported_languages, \
     get_piper_supported_voices, get_piper_supported_qualities, get_piper_supported_speakers
+from audiobook_generator.tts_providers.xtts_tts_provider import get_xtts_supported_languages, \
+    get_xtts_supported_models, get_xtts_supported_output_formats
 from audiobook_generator.utils.log_handler import generate_unique_log_path
 from main import main
 
@@ -53,7 +55,8 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
                     azure_language, azure_voice, azure_output_format, azure_break_duration,
                     edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch, edge_break_duration,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
-                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence):
+                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence,
+                    xtts_model, xtts_language, xtts_voice_file, xtts_speaker, xtts_speed, xtts_output_format):
 
     config = GeneralConfig(None)
     config.input_file = input_file.name if hasattr(input_file, 'name') else input_file
@@ -106,6 +109,14 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
         config.piper_noise_w_scale = piper_noise_w_scale
         config.piper_length_scale = piper_length_scale
         config.piper_sentence_silence = piper_sentence_silence
+    elif selected_tts == "XTTS":
+        config.tts = "xtts"
+        config.xtts_model = xtts_model
+        config.xtts_language = xtts_language
+        config.xtts_voice_file = xtts_voice_file.name if hasattr(xtts_voice_file, 'name') else xtts_voice_file
+        config.xtts_speaker = xtts_speaker
+        config.xtts_speed = xtts_speed
+        config.output_format = xtts_output_format
     else:
         raise ValueError("Unsupported TTS provider selected")
 
@@ -288,6 +299,59 @@ def host_ui(config):
                         with gr.Row(equal_height=True):
                             piper_length_scale = gr.Slider(minimum=0.0, maximum=5.0, step=0.1, label="Audio Length Scale", value=1.0)
                             piper_sentence_silence = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, label="Sentence Silence", value=0.2)
+
+            with gr.Tab("XTTS", id="xtts_tab_id") as xtts_tab:
+                xtts_tab.select(on_tab_change, inputs=None, outputs=None)
+                gr.Markdown("**High-Quality Local TTS using XTTS (Coqui)**")
+                gr.Markdown("*Requires: `pip install TTS` and GPU recommended for best performance*")
+                
+                with gr.Row(equal_height=True):
+                    with gr.Column():
+                        xtts_model = gr.Dropdown(
+                            get_xtts_supported_models(), 
+                            label="XTTS Model", 
+                            value="tts_models/multilingual/multi-dataset/xtts_v2",
+                            interactive=True, 
+                            info="Select XTTS model"
+                        )
+                        xtts_language = gr.Dropdown(
+                            get_xtts_supported_languages(), 
+                            label="Language", 
+                            value="en",
+                            interactive=True, 
+                            info="Select language"
+                        )
+                    
+                    with gr.Column():
+                        xtts_voice_file = gr.File(
+                            label="Voice Sample File (WAV, optional)", 
+                            file_types=[".wav"], 
+                            file_count="single", 
+                            interactive=True
+                        )
+                        xtts_speaker = gr.Number(
+                            label="Speaker Index (if no voice file)", 
+                            value=0, 
+                            interactive=True,
+                            info="Speaker index for multi-speaker models"
+                        )
+                    
+                    with gr.Column():
+                        xtts_speed = gr.Slider(
+                            minimum=0.5, 
+                            maximum=2.0, 
+                            step=0.1, 
+                            label="Speech Speed", 
+                            value=1.0,
+                            info="Speed of speech generation"
+                        )
+                        xtts_output_format = gr.Dropdown(
+                            get_xtts_supported_output_formats(), 
+                            label="Output Format",
+                            value="mp3", 
+                            interactive=True, 
+                            info="Select output format"
+                        )
         gr.Markdown("---")
         with gr.Row(equal_height=True):
             gr.Button("Stop").click(
@@ -303,7 +367,8 @@ def host_ui(config):
                     azure_language, azure_voice, azure_output_format, azure_break_duration,
                     edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch, edge_break_duration,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
-                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence
+                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence,
+                    xtts_model, xtts_language, xtts_voice_file, xtts_speaker, xtts_speed, xtts_output_format
                 ],
                 outputs=None)
         with gr.Row():
